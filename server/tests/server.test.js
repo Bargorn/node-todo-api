@@ -3,8 +3,9 @@ const request = require('supertest');
 
 const {app} = require('./../server');
 const {Todo} = require('./../models/todo');
+const {ObjectID} = require('mongodb');
 
-var todos = [{text: "some test todo"},{text:"second test todo"}]
+var todos = [{_id: new ObjectID, text: "some test todo"},{_id: new ObjectID, text:"second test todo"}]
 
 beforeEach((done) => {
   Todo.remove({}).then(() => {
@@ -65,4 +66,29 @@ describe('GET /todos', ()=>{
       })
       .end(done)
   });
+});
+describe('GET /todos/:id', ()=>{
+  it('should return the todo doc',(done)=>{
+    var id = todos[0]._id.toHexString();
+    request(app)
+      .get(`/todos/${id}`)
+      .expect(200)
+      .expect((res)=>{
+        expect(res.body.todo.text).toBe(todos[0].text);
+      })
+      .end(done);
+  });
+  it('should return 404 if todo is not found',(done)=>{
+    var id = new ObjectID().toHexString();
+    request(app)
+      .get(`/todos/${id}`)
+      .expect(404)
+      .end(done)
+  });
+  it('should return 404 for non ObjectID',(done)=>{
+    request(app)
+      .get(`/todos/123`)
+      .expect(404)
+      .end(done)
+  })
 });
